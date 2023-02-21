@@ -10,12 +10,41 @@ public class BreakCipher {
 
 
     public static ArrayList<Character> breakCipher(ArrayList<Character> charsForBreakCipher) {
-        double minCount;
-        int likelyKey;
-        HashMap<Integer, ArrayList<Integer>> countLetters = new HashMap<>();
+        HashMap<Integer, ArrayList<Integer>> result = countLetters(charsForBreakCipher);
+        ArrayList<Double> expectedFrequency = new ArrayList<>();
+        for (int i = 0; i < 33; i++) {
+            expectedFrequency.add(RUSSIAN_LETTERS_FREQUENCIES[i] * charsForBreakCipher.size());
+        }
+        int likelyKey = findLikelyKey(expectedFrequency, result);
+        return Cipher.decipher(charsForBreakCipher, likelyKey);
+    }
 
+    public static int findLikelyKey(ArrayList<Double> expectedFrequency, HashMap<Integer, ArrayList<Integer>> result) {
+        ArrayList<Double> xiSquares = new ArrayList<>();
         for (int shift = 0; shift < 74; shift++) {
-            ArrayList<Character> decipherText = Cipher.decipher(charsForBreakCipher, shift);
+            double sum = 0;
+            for (int i = 0; i < 33; i++) {
+                if (expectedFrequency.get(i) != 0) {
+                    double xiSquare = Math.pow((expectedFrequency.get(i) - result.get(shift).get(i)), 2) / expectedFrequency.get(i);
+                    sum += xiSquare;
+                }
+            }
+            xiSquares.add(sum);
+        }
+        double minCount;
+        minCount = xiSquares.get(0);
+        for (int shift = 0; shift < 74; shift++) {
+            if (xiSquares.get(shift) < minCount) {
+                minCount = xiSquares.get(shift);
+            }
+        }
+        return xiSquares.indexOf(minCount);
+    }
+
+    public static HashMap<Integer, ArrayList<Integer>> countLetters(ArrayList<Character> text) {
+        HashMap<Integer, ArrayList<Integer>> mapOfLetters = new HashMap<>();
+        for (int shift = 0; shift < 74; shift++) {
+            ArrayList<Character> decipherText = Cipher.decipher(text, shift);
             ArrayList<Integer> frequencies = new ArrayList<>();
             for (int j = 0; j < 33; j++) {
                 int countLetter = 0;
@@ -26,32 +55,8 @@ public class BreakCipher {
                 }
                 frequencies.add(countLetter);
             }
-            countLetters.put(shift, frequencies);
+            mapOfLetters.put(shift, frequencies);
         }
-
-        ArrayList<Double> expectedFrequency = new ArrayList<>();
-        for (int i = 0; i < 33; i++) {
-            expectedFrequency.add(RUSSIAN_LETTERS_FREQUENCIES[i] * charsForBreakCipher.size());
-        }
-
-        ArrayList<Double> xiSquares = new ArrayList<>();
-        for (int shift = 0; shift < 74; shift++) {
-            double sum = 0;
-            for (int i = 0; i < 33; i++) {
-                double xiSquare = Math.pow((expectedFrequency.get(i) - countLetters.get(shift).get(i)), 2) / expectedFrequency.get(i);
-                sum += xiSquare;
-            }
-            xiSquares.add(sum);
-        }
-
-        minCount = xiSquares.get(0);
-        for (int shift = 0; shift < 74; shift++) {
-            if (xiSquares.get(shift) < minCount) {
-                minCount = xiSquares.get(shift);
-            }
-        }
-
-        likelyKey = xiSquares.indexOf(minCount);
-        return Cipher.decipher(charsForBreakCipher, likelyKey);
+        return mapOfLetters;
     }
 }
