@@ -19,7 +19,6 @@ public class IOOperation {
     }
 
     public static ArrayList<Character> readFromFile(String fileName) {
-
         ArrayList<Character> list = new ArrayList<>();
         try (BufferedReader bufferedReader = new BufferedReader(new FileReader(fileName))) {
             int i;
